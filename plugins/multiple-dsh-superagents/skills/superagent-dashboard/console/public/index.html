@@ -100,6 +100,7 @@
 <header>
   <h1>Superagent 控制台</h1>
   <span class="sub" id="stamp">加载中…</span>
+  <span class="sub" id="hint"></span>
   <span class="spacer"></span>
   <label class="sub"><input type="checkbox" id="auto" checked> 自动刷新</label>
   <button id="refresh">刷新</button>
@@ -181,7 +182,9 @@ function metric(instance, tab, label, value, options = {}) {
     class: 'metric link' + (hot ? ' hot' : ''),
     href: `/panel/${encodeURIComponent(instance.profile)}?tab=${tab}`,
     target: '_blank', rel: 'noreferrer',
-    title: `打开面板的${DETAIL_LABEL[tab] || tab}标签`,
+    title: instance.deepLinks === false
+      ? '未安装深层链接补丁：会打开面板首页，需要手动点侧栏图标和标签'
+      : `打开面板的${DETAIL_LABEL[tab] || tab}标签`,
   }, ...body)
 }
 
@@ -209,9 +212,10 @@ function card(instance) {
   const actions = el('div', { class: 'actions' })
   const panel = el('a', {
     class: 'btn' + (running && instance.panel ? ' primary' : ''),
-    href: `/panel/${encodeURIComponent(instance.profile)}`,
+    href: `/panel/${encodeURIComponent(instance.profile)}?tab=overview`,
     target: '_blank', rel: 'noreferrer',
     text: '打开面板',
+    title: instance.deepLinks === false ? '未安装深层链接补丁：会落在 Conversation' : '打开该实例的面板',
   })
   if (!running || !instance.panel) {
     panel.setAttribute('aria-disabled', 'true')
@@ -266,6 +270,12 @@ function render(data) {
   grid.replaceChildren(...data.instances.map(card))
   empty.hidden = data.instances.length > 0
   stamp.textContent = `${data.instances.length} 个实例 · 更新于 ${new Date(data.generatedAt).toLocaleTimeString('zh-CN')}`
+  const missing = data.instances.filter((item) => item.running && item.deepLinks === false)
+  const hint = document.getElementById('hint')
+  hint.textContent = missing.length
+    ? `⚠ ${missing.length} 台未装深层链接补丁（跳转只会打开面板首页）：${missing.map((item) => item.profile).join('、')}`
+    : ''
+  hint.style.color = missing.length ? 'var(--amber)' : ''
 }
 
 async function load() {

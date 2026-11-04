@@ -48,6 +48,8 @@ superagent-dashboard       做“观察与开关”：读清单 + 各实例 API�
 | `skills/multiple-dsh-superagents/references/management-api.md` | 面板同款本地 HTTP API：读状态、取 revision、写 settings / prompts |
 | `skills/superagent-dashboard/SKILL.md` | 看板：启动、能力、数据来源、深层链接、排障 |
 | `skills/superagent-dashboard/console/server.mjs` | 控制台服务（零依赖 Node，聚合 API + 启停 + 日志取 token） |
+| `skills/superagent-dashboard/console/deeplink.mjs` | 可选补丁安装器：status / apply / revert，可指定 checkout 目录 |
+| `skills/superagent-dashboard/patch/panel-deeplink.patch` | 面板深层链接补丁（78 行，两个客户端文件） |
 | `skills/superagent-dashboard/console/public/index.html` | 单页 UI（列表、四个指标、跳转、启停） |
 
 ## 安装
@@ -84,9 +86,20 @@ superagent-dashboard       做“观察与开关”：读清单 + 各实例 API�
 - 「打开 superagent 看板」→ 启动 `console/server.mjs`，给出 `http://127.0.0.1:3099/`
 - 「停掉 SSPlugin 那个实例」→ 看板或脚本 `stop`，会先等当前步骤跑完
 
-## 看板需要的一次性准备
+## 可选：让看板“跳到面板标签”
 
-看板的“跳面板标签”依赖 dsh-superagent checkout 里的客户端补丁（`patches/panel-deeplink.patch`），改完要 `pnpm build` 并重启实例。详见 `superagent-dashboard/SKILL.md` 的「深层链接」一节。
+默认不装补丁时，看板全部功能可用，只是点指标会打开**面板首页**（DSH 主面板选择只在内存，刷新回 Conversation；面板不接受 URL 路由）。
+
+想让“触发 / 评估 / 执行中 / 待人工”一点直达标签，再装这个补丁——它是改 `dsh-superagent` 检出目录里的两个客户端文件，所以**由使用者决定是否安装、装到哪个目录**：
+
+```bash
+cd skills/superagent-dashboard/console
+node deeplink.mjs status --dir <你的 dsh-superagent 目录>
+node deeplink.mjs apply  --dir <你的 dsh-superagent 目录> --build
+node deeplink.mjs revert --dir <你的 dsh-superagent 目录>
+```
+
+看板会读 `<checkout>/src/client/route.ts` 自动判断装没装：`/api/fleet` 里带 `deepLinks` 字段，没装的实例在页面顶部有黄色提示。细节见 `superagent-dashboard/SKILL.md` 的「深层链接」一节。
 
 ## 维护
 

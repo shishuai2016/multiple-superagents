@@ -86,22 +86,54 @@ lsof -ti tcp:3099 | xargs kill   # 停止
 | 面板 token | `<checkout>/.artifacts/dsh-superagent-<profile>-*.log` 最新一条 |
 | 启停 | `<checkout>/scripts/dsh-superagent --profile <p> --url …` |
 
-## 深层链接（跳标签）
+## 深层链接（跳标签）— 可选，需要先问用户
 
-控制台的指标链接指向 `/panel/<profile>?tab=triggers|evals|executions|person`，服务端 302 到：
+控制台的四个指标是链接，指向：
 
 ```
-http://127.0.0.1:<port>/?token=…#trigger?filter=recent
-                                #eval?window=24h
-                                #execution?filter=working|person
+/panel/<profile>?tab=triggers|evals|executions|person
+  → 302 → http://127.0.0.1:<port>/?token=…#trigger?filter=recent
+                                          #eval?window=24h
+                                          #execution?filter=working|person
 ```
 
-面板侧原本**只有 sessionStorage 路由**，不接受 URL 定位。这条能力依赖 checkout 里的客户端补丁：
+面板本身**没有 URL 路由**：标签只存在内存 + sessionStorage，主面板选择刷新即回 Conversation。所以“一键定位”依赖一个 78 行的客户端补丁，打在 `dsh-superagent` 的检出目录里：
 
 - `src/client/route.ts` — `routeFromUrl()`，`initialLocation()` 优先解析 hash / `?tab=`
 - `src/client/index.tsx` — 命中深层链接时 `layout.selectPanel('dsh-superagent')`
 
-补丁文件：`<checkout>/patches/panel-deeplink.patch`。改完要 `pnpm build` 并重启实例；上游 `git pull` 后需要 `git apply` 重放。
+### 先问，再改
+
+这是改别人的代码，动手前必须问清两件事：
+
+1. **要不要装**：不装的话看板仍可用，只是“跳转”退化成“打开面板首页 → 点侧栏图标 → 点标签”（多两次点击，不会报错）。
+2. **作用在哪个 checkout**：默认取舰队清单里的 `checkout`，用户也可以给绝对路径。
+
+补丁随插件分发：`patch/panel-deeplink.patch`；安装器在 `console/deeplink.mjs`（零依赖）。
+
+### 检测与应用
+
+```bash
+cd "${CLAUDE_PLUGIN_ROOT}/skills/superagent-dashboard/console"
+
+node deeplink.mjs status                     # 目录存在 / 已应用 / 已构建 / 工作区干净
+node deeplink.mjs status --dir ~/work/code/dsh-superagent
+
+node deeplink.mjs apply --dir <checkout> --build   # 应用 + pnpm build
+node deeplink.mjs revert --dir <checkout>          # 反向应用
+```
+
+`apply` 之后必须**重启实例**，再让用户**硬刷新**面板页（⌘⇧R）。
+
+### 失败与回退
+
+- `git apply` 失败（上游版本变了）：脚本打印被拒片段，提示手工合并或 `git apply --reject`；不会强行改文件。
+- 回退：`revert` 只做反向 patch，不动别的文件；若文件已被手工改过会失败，并提示 `git checkout -- src/client/route.ts src/client/index.tsx`。
+- 升级上游后：`git pull` 会覆盖补丁，重新 `apply` 即可。
+
+### 看板如何知道有没有装
+
+`server.mjs` 会读 `<checkout>/src/client/route.ts` 判断补丁在不在，`/api/fleet` 里每台实例带 `deepLinks: true|false`。没装时页面顶部会出现一条黄色提示，链接的 tooltip 也会说明“只会打开面板首页”。
 
 ## 排障
 

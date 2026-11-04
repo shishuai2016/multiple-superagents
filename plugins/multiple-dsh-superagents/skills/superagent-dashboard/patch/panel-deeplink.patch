@@ -1,0 +1,78 @@
+diff --git a/src/client/index.tsx b/src/client/index.tsx
+index fb0b84b..d5a10e0 100644
+--- a/src/client/index.tsx
++++ b/src/client/index.tsx
+@@ -13,6 +13,7 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
+ import { openKnownSession, SessionNavigationError } from '../navigation.ts'
+ import { App } from './app.tsx'
+ import { PluginConfig, usePageForm } from './deployment.tsx'
++import { routeFromUrl } from './route.ts'
+ import { en, zh } from './locales.ts'
+ import type { T } from './text.ts'
+ 
+@@ -45,7 +46,7 @@ function Mounted({ ctx, t }: { ctx: ClientContext; t: T }) {
+   return <App t={t} openSession={openSession} deploymentForm={form} />
+ }
+ 
+-export const inject = ['slots', 'locale', 'sessions', 'uiWorkspace']
++export const inject = ['slots', 'locale', 'sessions', 'uiWorkspace', 'layout']
+ /** Registers the panel, sidebar icon, and Plugin Manager config view; `configForms` is optional (without it, machine settings are read-only). */
+ export function apply(ctx: ClientContext): void {
+   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-superagent: dictionaries')
+@@ -55,4 +56,16 @@ export function apply(ctx: ClientContext): void {
+   ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({ name: 'sidebar.panellist', id: PANEL_ID, order: 10, label: () => t('panel'), locale: NS }, HammerIcon))
+   ctx.slots.inject('plugins.row.config', () => ctx.slots.register({ name: 'plugins.row.config', key: `${ENTRY}#${ENTRY}`, locale: NS },
+     (props: PluginConfigViewProps & { t: T }) => <PluginConfig t={props.t} view={props.view} form={props.form} />))
++  // A deep link (`#execution`, `?tab=execution`) opens this panel and the tab it names, so an external
++  // dashboard can jump straight to a view instead of landing on the Conversation.
++  ctx.effect(() => {
++    if (typeof location === 'undefined' || !routeFromUrl(location.hash, location.search)) return
++    const layout = ctx.get('layout') as { selectPanel(id: string): void } | undefined
++    const select = () => {
++      try { layout?.selectPanel(PANEL_ID) } catch { /* the main slot registers asynchronously */ }
++    }
++    select()
++    const retry = setTimeout(select, 100)
++    return () => clearTimeout(retry)
++  }, 'dsh-superagent: deep link')
+ }
+diff --git a/src/client/route.ts b/src/client/route.ts
+index 61413b6..fa5527c 100644
+--- a/src/client/route.ts
++++ b/src/client/route.ts
+@@ -50,7 +50,35 @@ const ROUTE_KEY = 'dsh-superagent/route'
+ export interface Location { route: Route; stack: Route[]; group?: SettingsGroup | undefined }
+ export const lastSettingsGroup = ({ route, group }: Location): SettingsGroup => route.page === 'settings' ? route.query.group
+   : group ?? 'source'
++/**
++ * Parse a deep link carried in the page URL, so an external tool can open one panel tab directly:
++ * `#execution`, `#execution?filter=person`, `#eval?window=24h`, `#trigger`, `#settings?group=prompts`.
++ * Falls back to `?tab=` for links whose fragment a redirect dropped.
++ */
++export function routeFromUrl(hash: string, search: string): Route | undefined {
++  const raw = hash.replace(/^#\/?/, '')
++  if (raw) {
++    const [path, query = ''] = raw.split('?')
++    const [page, id] = path.split('/').filter(Boolean)
++    const route = parseRoute({ page, id, query: Object.fromEntries(new URLSearchParams(query)) })
++    if (route) return route
++  }
++  const params = new URLSearchParams(search)
++  const tab = params.get('tab')
++  if (!tab) return undefined
++  return parseRoute({
++    page: tab,
++    query: {
++      filter: params.get('filter') ?? undefined,
++      group: params.get('group') ?? undefined,
++      window: params.get('window') ?? undefined,
++    },
++  })
++}
++
+ export function initialLocation(): Location {
++  const linked = typeof location === 'undefined' ? undefined : routeFromUrl(location.hash, location.search)
++  if (linked) return { route: linked, stack: [], group: linked.page === 'settings' ? linked.query.group : undefined }
+   try {
+     const stored = JSON.parse(sessionStorage.getItem(ROUTE_KEY) ?? 'null') as { route?: unknown; stack?: unknown; group?: unknown } | null
+     const route = parseRoute(stored?.route)

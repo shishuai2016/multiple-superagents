@@ -13,7 +13,7 @@
 | Skill | 定位 | 能力 |
 |---|---|---|
 | [`multiple-dsh-superagents`](plugins/multiple-dsh-superagents/skills/multiple-dsh-superagents/SKILL.md) | **做加法**：部署与运维 | 新增实例、配置迁移、批量启停巡检、setup 排错、Management API 速查；只改实例，不提供界面 |
-| [`superagent-dashboard`](plugins/multiple-dsh-superagents/skills/superagent-dashboard/SKILL.md) | **做观察与开关**：本机看板 | 零依赖 Node 控制台：实例列表、24h 触发/评估/执行中/待人工、一键跳面板对应标签、一键启停 |
+| [`superagent-dashboard`](plugins/multiple-dsh-superagents/skills/superagent-dashboard/SKILL.md) | **做观察与开关**：本机看板 | 零依赖 Node 控制台：实例列表、24h 触发/评估/执行中/待人工、一键启停；“跳到面板标签”需要可选补丁（安装器随 skill 分发，由使用者决定是否装、装到哪个 checkout） |
 
 两者的衔接点是 `~/.dsh/superagent-fleet.json`：fleet skill 写入实例清单，看板读同一份清单并聚合各实例的 `/orchestrator/api/*`。看板不复制状态，只做视图与开关。
 
@@ -82,8 +82,10 @@ SSPlugin/
             │   └── references/management-api.md
             └── superagent-dashboard/              # 本机看板
                 ├── SKILL.md
+                ├── patch/panel-deeplink.patch      # 可选：面板深层链接
                 └── console/
                     ├── server.mjs
+                    ├── deeplink.mjs                # 补丁安装器
                     └── public/index.html
 ```
 

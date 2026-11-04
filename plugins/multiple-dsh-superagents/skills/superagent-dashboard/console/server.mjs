@@ -59,6 +59,19 @@ async function instances() {
   }))
 }
 
+/** checkout 里是否装了深层链接补丁（决定看板能不能跳到面板标签）。 */
+const deepLinkCache = new Map()
+async function hasDeepLinks(checkout) {
+  const hit = deepLinkCache.get(checkout)
+  if (hit && Date.now() - hit.at < 10_000) return hit.value
+  let value = false
+  try {
+    value = (await readFile(join(checkout, 'src', 'client', 'route.ts'), 'utf8')).includes('routeFromUrl')
+  } catch { /* 不是 dsh-superagent 的检出目录 */ }
+  deepLinkCache.set(checkout, { at: Date.now(), value })
+  return value
+}
+
 async function api(port, path) {
   const response = await fetch(`http://127.0.0.1:${port}/orchestrator/api${path}`, {
     headers: { 'x-orchestrator-request': '1' },
@@ -136,6 +149,7 @@ async function snapshot(inst) {
     port: inst.port,
     agent: inst.agent,
     running: false,
+    deepLinks: await hasDeepLinks(inst.checkout),
     panel: null,
     error: null,
     health: {},
@@ -298,7 +312,8 @@ const server = createServer(async (req, res) => {
         return
       }
       // 标签片段由 dsh-superagent 客户端的深层链接解析（#execution?filter=person）。
-      const hash = PANEL_TABS[url.searchParams.get('tab') ?? ''] ?? ''
+      // 没装补丁时面板会忽略它，这时候干脆不发，避免误导。
+      const hash = (await hasDeepLinks(inst.checkout)) ? PANEL_TABS[url.searchParams.get('tab') ?? ''] ?? '' : ''
       res.writeHead(302, { location: target + hash, 'cache-control': 'no-store' })
       res.end()
       return
