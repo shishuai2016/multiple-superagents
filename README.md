@@ -1,4 +1,4 @@
-# SSPlugin
+# multiple-superagents
 
 把 dsh-superagent 相关的 skill 打包成插件，同时支持 **Claude Code** 与 **Cursor**。
 
@@ -29,7 +29,7 @@ node server.mjs        # → http://127.0.0.1:3099/
 
 ```bash
 # 1. 添加本仓库为 marketplace
-/plugin marketplace add https://github.com/shishuai2016/SSPlugin.git
+/plugin marketplace add https://github.com/shishuai2016/multiple-superagents.git
 
 # 2. 安装插件
 /plugin install multiple-dsh-superagents@ssplugin
@@ -41,7 +41,7 @@ node server.mjs        # → http://127.0.0.1:3099/
 本地调试可直接指向工作区路径：
 
 ```bash
-/plugin marketplace add /Users/<you>/work/code/SSPlugin
+/plugin marketplace add /Users/<you>/work/code/multiple-superagents
 ```
 
 ### Cursor
@@ -53,7 +53,7 @@ node server.mjs        # → http://127.0.0.1:3099/
   "plugins": {
     "ssplugin/multiple-dsh-superagents": {
       "enabled": true,
-      "gitUrl": "https://github.com/shishuai2016/SSPlugin.git",
+      "gitUrl": "https://github.com/shishuai2016/multiple-superagents.git",
       "gitRef": "main",
       "gitPath": "plugins/multiple-dsh-superagents"
     }
@@ -68,7 +68,7 @@ node server.mjs        # → http://127.0.0.1:3099/
 单源双清单：内容只存一份，两个 IDE 各一份薄清单。
 
 ```
-SSPlugin/
+multiple-superagents/
 ├── .claude-plugin/marketplace.json     # Claude Code marketplace 清单
 ├── .cursor-plugin/marketplace.json     # Cursor marketplace 清单
 └── plugins/

@@ -57,7 +57,7 @@ superagent-dashboard       做“观察与开关”：读清单 + 各实例 API�
 ### Claude Code
 
 ```bash
-/plugin marketplace add https://github.com/shishuai2016/SSPlugin.git
+/plugin marketplace add https://github.com/shishuai2016/multiple-superagents.git
 /plugin install multiple-dsh-superagents@ssplugin
 ```
 
@@ -70,7 +70,7 @@ superagent-dashboard       做“观察与开关”：读清单 + 各实例 API�
   "plugins": {
     "ssplugin/multiple-dsh-superagents": {
       "enabled": true,
-      "gitUrl": "https://github.com/shishuai2016/SSPlugin.git",
+      "gitUrl": "https://github.com/shishuai2016/multiple-superagents.git",
       "gitRef": "main",
       "gitPath": "plugins/multiple-dsh-superagents"
     }
@@ -84,7 +84,7 @@ superagent-dashboard       做“观察与开关”：读清单 + 各实例 API�
 
 - 「再开一个 superagent 盯 `owner/repo`」→ 走 fleet 流程（铁律核对 → 一次问一项 → 给计划）
 - 「打开 superagent 看板」→ 启动 `console/server.mjs`，给出 `http://127.0.0.1:3099/`
-- 「停掉 SSPlugin 那个实例」→ 看板或脚本 `stop`，会先等当前步骤跑完
+- 「停掉 superagent-SSPlugin 那个实例」→ 看板或脚本 `stop`，会先等当前步骤跑完
 
 ## 可选：让看板“跳到面板标签”
 
