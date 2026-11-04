@@ -1,0 +1,10 @@
+{
+  "name": "superagent-fleet-console",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "本机网页控制台：整体查看和管理多台 dsh-superagent",
+  "scripts": {
+    "start": "node server.mjs"
+  }
+}

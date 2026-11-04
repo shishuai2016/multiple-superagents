@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Superagent 控制台</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --line: #e5e7eb;
+    --text: #1f2328;
+    --muted: #6b7280;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --blue: #2563eb;
+    --gap: 16px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 24px; background: rgba(246,247,249,.92);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+  }
+  h1 { font-size: 16px; margin: 0; font-weight: 650; }
+  .sub { color: var(--muted); font-size: 12px; }
+  .spacer { flex: 1; }
+  main { padding: 24px; max-width: 1500px; margin: 0 auto; }
+  .grid { display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); align-items: start; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    box-shadow: 0 1px 2px rgba(16,24,40,.04);
+  }
+  .card.stopped { opacity: .72; }
+  .card-head { display: flex; align-items: flex-start; gap: 10px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 7px; flex: none; background: #9ca3af; }
+  .dot.ok { background: var(--green); box-shadow: 0 0 0 3px rgba(22,163,74,.15); }
+  .dot.warn { background: var(--amber); box-shadow: 0 0 0 3px rgba(217,119,6,.15); }
+  .dot.bad { background: var(--red); box-shadow: 0 0 0 3px rgba(220,38,38,.15); }
+  .name { font-weight: 650; font-size: 15px; }
+  .meta { color: var(--muted); font-size: 12px; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .metric { background: #f9fafb; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; text-align: left; font: inherit; color: inherit; }
+  .metric .v { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .metric .k { font-size: 11px; color: var(--muted); }
+  .metric.hot .v { color: var(--blue); }
+  .metric.open { background: #eff6ff; border-color: rgba(37,99,235,.35); }
+  a.metric { display: block; text-decoration: none; color: inherit; cursor: pointer; }
+  a.metric:hover { background: #eff6ff; border-color: rgba(37,99,235,.35); }
+  a.metric:hover .k { color: var(--blue); }
+  .metric .hint { font-size: 10px; color: var(--amber); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    background: #f3f4f6; color: var(--muted); border: 1px solid var(--line);
+  }
+  .chip.ok { color: var(--green); border-color: rgba(22,163,74,.3); background: rgba(22,163,74,.08); }
+  .chip.bad { color: var(--red); border-color: rgba(220,38,38,.3); background: rgba(220,38,38,.08); }
+  .problems { font-size: 12px; color: var(--red); display: flex; flex-direction: column; gap: 2px; }
+  .problems span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .detail-list { border-top: 1px dashed var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+  .detail { font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
+  .detail-title { font-weight: 600; font-size: 13px; }
+  .detail-title a { color: var(--blue); text-decoration: none; }
+  .detail-title a:hover { text-decoration: underline; }
+  .detail-meta { color: var(--amber); font-size: 11px; }
+  .detail-text { color: var(--muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+  .actions { display: flex; gap: 8px; margin-top: auto; padding-top: 4px; }
+  button, .btn {
+    font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--line); background: #fff; color: var(--text); text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  button:hover, .btn:hover { background: #f3f4f6; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .btn.primary:hover { background: #1d4ed8; }
+  .btn.danger { color: var(--red); border-color: rgba(220,38,38,.35); }
+  .btn.danger:hover { background: rgba(220,38,38,.06); }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: #111827; color: #fff; padding: 10px 16px; border-radius: 10px;
+    font-size: 13px; max-width: 70vw; opacity: 0; pointer-events: none; transition: opacity .2s;
+    white-space: pre-wrap;
+  }
+  .toast.show { opacity: 1; }
+  .empty { color: var(--muted); text-align: center; padding: 60px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Superagent 控制台</h1>
+  <span class="sub" id="stamp">加载中…</span>
+  <span class="spacer"></span>
+  <label class="sub"><input type="checkbox" id="auto" checked> 自动刷新</label>
+  <button id="refresh">刷新</button>
+</header>
+<main>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>没有在舰队登记表里找到实例。</div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const grid = document.getElementById('grid')
+const empty = document.getElementById('empty')
+const stamp = document.getElementById('stamp')
+const toastEl = document.getElementById('toast')
+const DETAIL_LABEL = { triggers: '触发', evals: '评估', executions: '执行中', person: '待人工' }
+let busy = new Set()
+let timer = null
+let lastData = null
+
+function toast(text) {
+  toastEl.textContent = text
+  toastEl.classList.add('show')
+  clearTimeout(toast._t)
+  toast._t = setTimeout(() => toastEl.classList.remove('show'), 4000)
+}
+
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag)
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') node.className = v
+    else if (k === 'text') node.textContent = v
+    else node.setAttribute(k, v)
+  }
+  for (const child of children) if (child) node.append(child)
+  return node
+}
+
+function ago(iso) {
+  if (!iso) return ''
+  const minutes = Math.round((Date.now() - Date.parse(iso)) / 60000)
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes} 分钟前`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours} 小时前`
+  return `${Math.round(hours / 24)} 天前`
+}
+
+function healthChips(instance) {
+  const wrap = el('div', { class: 'chips' })
+  if (!instance.running) {
+    wrap.append(el('span', { class: 'chip', text: instance.error === 'timeout' ? '无响应' : '已停止' }))
+    return wrap
+  }
+  const sourceHealth = new Set(['github', 'feishu'])
+  for (const [name, value] of Object.entries(instance.health || {})) {
+    const state = typeof value === 'string' ? value : value?.state
+    if (name.startsWith('sync:') || name === 'history') continue
+    // 只展示来源类健康项；其它内部健康项仅在异常时露面，避免一排噪声。
+    if (!sourceHealth.has(name) && state === 'ready') continue
+    const cls = state === 'ready' ? 'chip ok' : state === 'paused' ? 'chip' : 'chip bad'
+    wrap.append(el('span', { class: cls, text: `${name} · ${state ?? '?'}` }))
+  }
+  if (instance.paused) wrap.append(el('span', { class: 'chip bad', text: '已暂停' }))
+  if (instance.setup) wrap.append(el('span', { class: 'chip bad', text: `setup · ${instance.setup}` }))
+  return wrap
+}
+
+/** 指标即入口：点击跳到该实例面板的对应标签（面板侧支持 #trigger / #eval / #execution 深层链接）。 */
+function metric(instance, tab, label, value, options = {}) {
+  const hot = value > 0
+  const body = [
+    el('div', { class: 'v', text: String(value ?? '–') }),
+    el('div', { class: 'k', text: label }),
+    options.hint ? el('div', { class: 'hint', text: options.hint }) : null,
+  ]
+  if (!options.enabled) return el('div', { class: 'metric' + (hot ? ' hot' : '') }, ...body)
+  return el('a', {
+    class: 'metric link' + (hot ? ' hot' : ''),
+    href: `/panel/${encodeURIComponent(instance.profile)}?tab=${tab}`,
+    target: '_blank', rel: 'noreferrer',
+    title: `打开面板的${DETAIL_LABEL[tab] || tab}标签`,
+  }, ...body)
+}
+
+function card(instance) {
+  const running = instance.running
+  const flow = instance.flow || {}
+  const exec = instance.executor || {}
+  const problems = instance.problems || []
+  const dotClass = !running ? '' : problems.length ? 'warn' : 'ok'
+
+  const head = el('div', { class: 'card-head' },
+    el('div', { class: 'dot ' + dotClass }),
+    el('div', {},
+      el('div', { class: 'name', text: instance.profile }),
+      el('div', { class: 'meta', text: `${instance.repo || '—'} · :${instance.port}` })))
+
+  const personCount = instance.person ?? 0
+  const executing = (exec.running ?? 0) + (exec.queued ?? 0)
+  const metrics = el('div', { class: 'metrics' },
+    metric(instance, 'triggers', '触发 24h', flow.triggers ?? 0, { enabled: running }),
+    metric(instance, 'evals', '评估 24h', flow.judged ?? 0, { enabled: running }),
+    metric(instance, 'executions', '执行中', `${exec.running ?? 0}/${exec.maxWorkers ?? 0}`, { enabled: running }),
+    metric(instance, 'person', '待人工', personCount, { enabled: running && personCount > 0 }))
+
+  const actions = el('div', { class: 'actions' })
+  const panel = el('a', {
+    class: 'btn' + (running && instance.panel ? ' primary' : ''),
+    href: `/panel/${encodeURIComponent(instance.profile)}`,
+    target: '_blank', rel: 'noreferrer',
+    text: '打开面板',
+  })
+  if (!running || !instance.panel) {
+    panel.setAttribute('aria-disabled', 'true')
+    panel.style.pointerEvents = 'none'
+    panel.style.opacity = '.45'
+  }
+  actions.append(panel)
+
+  const isBusy = busy.has(instance.profile)
+  const act = (name, label, cls) => {
+    const button = el('button', { class: cls || '', text: label })
+    button.disabled = isBusy
+    button.onclick = () => invoke(instance, name, button)
+    return button
+  }
+  if (running) {
+    actions.append(act('restart', '重启'), act('stop', '停止', 'danger'))
+  } else {
+    actions.append(act('start', '启动', 'primary'))
+  }
+
+  const node = el('div', { class: 'card' + (running ? '' : ' stopped') },
+    head, healthChips(instance), metrics)
+  if (problems.length) {
+    const list = el('div', { class: 'problems' })
+    for (const p of problems.slice(0, 3)) list.append(el('span', { text: `⚠ ${p.kind}${p.detail ? '：' + p.detail : ''}` }))
+    node.append(list)
+  }
+  node.append(actions)
+  return node
+}
+
+async function invoke(instance, action, button) {
+  if (action === 'stop' && !confirm(`停止 ${instance.profile}？\n\n进行中的工单会先跑完当前步骤。`)) return
+  busy.add(instance.profile)
+  button.disabled = true
+  button.textContent = action === 'stop' ? '停止中…' : action === 'start' ? '启动中…' : '重启中…'
+  try {
+    const response = await fetch(`/api/instances/${encodeURIComponent(instance.profile)}/${action}`, { method: 'POST' })
+    const result = await response.json()
+    toast(result.ok ? `${instance.profile}：${action} 完成` : `${instance.profile}：${action} 失败（exit ${result.code}）\n${(result.output || '').slice(-300)}`)
+  } catch (error) {
+    toast(`${action} 失败：${error.message}`)
+  } finally {
+    busy.delete(instance.profile)
+    load()
+  }
+}
+
+function render(data) {
+  if (!data) return
+  grid.replaceChildren(...data.instances.map(card))
+  empty.hidden = data.instances.length > 0
+  stamp.textContent = `${data.instances.length} 个实例 · 更新于 ${new Date(data.generatedAt).toLocaleTimeString('zh-CN')}`
+}
+
+async function load() {
+  try {
+    const response = await fetch('/api/fleet', { cache: 'no-store' })
+    lastData = await response.json()
+    render(lastData)
+  } catch (error) {
+    stamp.textContent = `读取失败：${error.message}`
+  }
+}
+
+function schedule() {
+  clearInterval(timer)
+  if (document.getElementById('auto').checked) timer = setInterval(load, 3000)
+}
+
+document.getElementById('refresh').onclick = load
+document.getElementById('auto').onchange = schedule
+load()
+schedule()
+</script>
+</body>
+</html>
