@@ -182,9 +182,12 @@ function metric(instance, tab, label, value, options = {}) {
     class: 'metric link' + (hot ? ' hot' : ''),
     href: `/panel/${encodeURIComponent(instance.profile)}?tab=${tab}`,
     target: '_blank', rel: 'noreferrer',
-    title: instance.deepLinks === false
-      ? '未安装深层链接补丁：会打开面板首页，需要手动点侧栏图标和标签'
-      : `打开面板的${DETAIL_LABEL[tab] || tab}标签`,
+    title: [
+      instance.deepLinks === false
+        ? '未安装深层链接补丁：会打开面板首页，需要手动点侧栏图标和标签'
+        : `打开面板的${DETAIL_LABEL[tab] || tab}标签`,
+      options.note,
+    ].filter(Boolean).join('\n\n'),
   }, ...body)
 }
 
@@ -206,7 +209,12 @@ function card(instance) {
   const metrics = el('div', { class: 'metrics' },
     metric(instance, 'triggers', '触发 24h', flow.triggers ?? 0, { enabled: running }),
     metric(instance, 'evals', '评估 24h', flow.judged ?? 0, { enabled: running }),
-    metric(instance, 'executions', '执行中', `${exec.running ?? 0}/${exec.maxWorkers ?? 0}`, { enabled: running }),
+    metric(instance, 'executions', '执行中', `${exec.running ?? 0}/${exec.maxWorkers ?? 0}`, {
+      enabled: running,
+      hint: exec.idle > 0 ? `含 ${exec.idle} 个等待中` : '',
+      note: `执行槽位：运行中 ${exec.running ?? 0}，排队 ${exec.queued ?? 0}，等待中 ${exec.idle ?? 0}。\n`
+        + '「等待中」的工单在面板的「等待新触发」标签下，不在「执行中」里。',
+    }),
     metric(instance, 'person', '待人工', personCount, { enabled: running && personCount > 0 }))
 
   const actions = el('div', { class: 'actions' })
