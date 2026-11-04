@@ -1,7 +1,7 @@
 {
   "name": "multiple-dsh-superagents",
   "displayName": "DSH Superagent 多实例",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "在多台仓库上部署和管理多个 dsh-superagent 实例：一个实例只盯一个 GitHub 仓库，实例间以 profile / 端口 / stateDir / Agent 账号四重隔离。覆盖新增实例、配置迁移、批量启停巡检、setup 排错与管理 API 速查。",
   "author": {
     "name": "shishuai"
