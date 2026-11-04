@@ -1,7 +1,7 @@
 ---
 name: multiple-dsh-superagents
 version: 1.0.0
-description: "在多台仓库上部署和管理多个 dsh-superagent 实例（一个实例只盯一个 GitHub 仓库）。用于新增实例、迁移/复制配置、批量启停与巡检、修复 setup 问题。触发词：super agent 多仓库、再开一个 superagent、部署第二个实例、fleet、批量管理 superagent。反触发：只想问架构/原理，或只想给已在跑的实例提一条需求（那走 GitHub/飞书入口，不建实例）。"
+description: "部署和管理多台 dsh-superagent 实例（一实例一 GitHub 仓库）：新增、迁移配置、批量启停巡检、修复 setup。触发：再开一个 superagent、部署第二个实例、fleet、多仓库。反触发：只问原理，或给已有实例提需求（走 GitHub/飞书入口）。"
 metadata:
   requires:
     bins: ["dsh", "pnpm", "git", "tmux", "gh"]

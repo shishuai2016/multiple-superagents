@@ -1,7 +1,7 @@
 ---
 name: superagent-dashboard
 version: 1.0.0
-description: "本机网页控制台 SuperagentDashboard：把多台 dsh-superagent 实例聚合成一个页面，看列表、24 小时触发/评估/执行中/待人工，一键跳到对应面板标签，一键启停。用在「superagent 看板/控制台/总览」「几台 superagent 一起看」「启停某个实例」「打开它的面板」这类请求；反触发：只想改某个实例的配置或排查单条工单（那走面板或 Management API），或者根本还没装 superagent。"
+description: "本机网页控制台：一屏看多台 dsh-superagent 的状态、24h 触发/评估/执行中/待人工，一键跳面板标签、一键启停。用在「superagent 看板/控制台/总览」「几台一起看」「启停某个实例」。反触发：改实例配置或查单条工单（走面板或 Management API）。"
 metadata:
   requires:
     bins: ["node"]
