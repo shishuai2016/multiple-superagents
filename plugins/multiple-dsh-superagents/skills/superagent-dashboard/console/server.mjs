@@ -257,7 +257,20 @@ const server = createServer(async (req, res) => {
 
   try {
     if (url.pathname === '/' || url.pathname === '/index.html') {
-      const html = await readFile(join(ROOT, 'public', 'index.html'))
+      let html
+      try {
+        html = await readFile(join(ROOT, 'public', 'index.html'))
+      } catch (error) {
+        // 目录被移动/删除后，ROOT 仍指向旧绝对路径：给一句能照着做的提示，而不是裸 JSON。
+        res.writeHead(500, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
+        res.end(`<meta charset="utf-8"><body style="font:14px/1.6 -apple-system;padding:40px;max-width:720px">
+<h3>控制台的文件读不到了</h3>
+<p><code>${String(error.message)}</code></p>
+<p>通常是插件目录被移动或删除，而进程还是旧路径启动的。先停掉再重新启动：</p>
+<pre>lsof -ti tcp:${PORT} | xargs kill
+node server.mjs</pre></body>`)
+        return
+      }
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
       res.end(html)
       return

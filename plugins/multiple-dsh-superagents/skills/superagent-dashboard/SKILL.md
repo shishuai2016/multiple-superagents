@@ -141,6 +141,7 @@ node deeplink.mjs revert --dir <checkout>          # 反向应用
 |---|---|
 | 端口被占 | `PORT=4001 node server.mjs`，或 `lsof -ti tcp:3099 \| xargs kill` |
 | 卡片显示「已停止」但进程在 | 端口与清单 `port` 不一致；核对 `config.json` 里的 `port` |
+| 页面 500 或 `ENOENT … public/index.html` | 控制台进程是旧路径启动的（目录被移动/重命名过）：`lsof -ti tcp:3099 \| xargs kill`，然后在新目录重跑 `node server.mjs` |
 | 「打开面板」404 | 日志里还没有 token；实例启动后日志会打印一行带 token 的 URL |
 | 面板页 404 / 空白 | token 过期（每次重启都变）；从控制台重新点「打开面板」 |
 | 面板报 `Failed to load plugins` / `entry did not activate` | 客户端 bundle 换了但页面是旧的：硬刷新（⌘⇧R）；仍失败看浏览器控制台第一条异常 |
